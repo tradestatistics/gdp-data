@@ -27,30 +27,22 @@ d <- gdp_constant_2010_usd %>%
   ) %>%
   rename(
     country_iso = iso3c,
-    year = date
+    to = date
   ) %>%
   mutate(
     country_iso = tolower(country_iso),
     country_iso = ifelse(country_iso == "rou", "rom", country_iso)
   ) %>%
-  filter(year >= 1962) %>%
-  group_by(year) %>%
+  filter(to >= 1963) %>%
+  group_by(to) %>%
   summarise(
     conversion_factor = weighted.mean(inflation, gdp) + 1
-  )
+  ) %>% 
+  mutate(
+    to = as.integer(to),
+    from = to - 1
+  ) %>% 
+  select(from, to, conversion_factor)
 
-d2 <- d %>%
-  select(year) %>%
-  rename(from = year) %>%
-  mutate(to = from) %>%
-  expand.grid(stringsAsFactors = FALSE) %>%
-  filter(from < to) %>%
-  arrange(from) %>%
-  left_join(
-    d %>%
-      select(year, conversion_factor),
-    by = c("to" = "year")
-  )
-
-readr::write_csv(d2, "inflation-data.csv")
-jsonlite::write_json(d2, "inflation-data.json")
+readr::write_csv(d, "inflation-data.csv")
+jsonlite::write_json(d, "inflation-data.json")
