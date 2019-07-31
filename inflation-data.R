@@ -1,4 +1,4 @@
-# Open discount-rate.Rproj before running this script.
+# Open inflation-data.Rproj before running this script.
 
 # This program creates and updates the discount_rates table with the latest
 # available innformation.
@@ -10,6 +10,7 @@
 library(wbstats)
 library(dplyr)
 library(readr)
+library(jsonlite)
 
 inflation <- wbstats::wb(indicator = "FP.CPI.TOTL.ZG")
 
@@ -49,33 +50,7 @@ d2 <- d %>%
     d %>%
       select(year, conversion_factor),
     by = c("to" = "year")
-  ) %>%
-  tidyr::spread(to, conversion_factor)
+  )
 
-d2 <- d2 %>%
-  select(-from) %>%
-  as.matrix()
-
-rownames(d2) <- 1962:2017
-
-for (i in 1:nrow(d2)) {
-  for (j in 1:ncol(d2)) {
-    if (i <= j) {
-      break()
-    } else {
-      if (i == j + 1) {
-        d2[i,j] <- 1
-      } else {
-        d2[i,j] <- d2[j,i-1]
-      }
-    }
-  }
-}
-
-d3 <- d2 %>%
-  as.data.frame() %>%
-  tibble::rownames_to_column() %>%
-  dplyr::rename(from = rowname) %>%
-  tidyr::gather(to, conversion_factor, -from)
-
-readr::write_csv(d3, "discount-rates.csv")
+readr::write_csv(d2, "inflation-data.csv")
+jsonlite::write_json(d2, "inflation-data.json")
