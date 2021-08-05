@@ -34,7 +34,7 @@ d <- gdp_constant_2010_usd %>%
     country_iso = ifelse(country_iso == "rou", "rom", country_iso)
   ) %>%
   drop_na() %>% 
-  filter(to >= 1962) %>%
+  filter(to >= 1963) %>%
   group_by(to) %>%
   summarise(
     conversion_factor = weightedMedian(inflation, gdp) + 1
