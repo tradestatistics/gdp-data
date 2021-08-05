@@ -9,20 +9,20 @@
 # Package dependencies:
 library(wbstats)
 library(dplyr)
+library(tidyr)
+library(matrixStats)
 library(readr)
 library(jsonlite)
 
-inflation <- wbstats::wb(indicator = "FP.CPI.TOTL.ZG")
+inflation <- wbstats::wb_data(indicator = "FP.CPI.TOTL.ZG")
 
-gdp_constant_2010_usd <- wbstats::wb(indicator = "NY.GDP.MKTP.KD")
+gdp_constant_2010_usd <- wbstats::wb_data(indicator = "NY.GDP.MKTP.KD")
 
 d <- gdp_constant_2010_usd %>%
-  select(iso3c, date, value) %>%
-  rename(gdp = value) %>%
+  select(iso3c, date, gdp = NY.GDP.MKTP.KD) %>%
   inner_join(
     inflation %>%
-      select(iso3c, date, value) %>%
-      rename(inflation = value) %>%
+      select(iso3c, date, inflation = FP.CPI.TOTL.ZG) %>%
       mutate(inflation = inflation / 100)
   ) %>%
   rename(
@@ -33,10 +33,11 @@ d <- gdp_constant_2010_usd %>%
     country_iso = tolower(country_iso),
     country_iso = ifelse(country_iso == "rou", "rom", country_iso)
   ) %>%
-  filter(to >= 1963) %>%
+  drop_na() %>% 
+  filter(to >= 1962) %>%
   group_by(to) %>%
   summarise(
-    conversion_factor = weighted.mean(inflation, gdp) + 1
+    conversion_factor = weightedMedian(inflation, gdp) + 1
   ) %>% 
   mutate(
     to = as.integer(to),
